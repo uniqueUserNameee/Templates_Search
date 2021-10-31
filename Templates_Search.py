@@ -27,7 +27,7 @@ def vk_authorization(login, password):
 
 
 # Функция, которая записывает в JSON-файл информацию со стены пользователя или сообщества
-def writing_wall_info_to_json(vk, owner_id=None, domain=None, posts_number=5, path_to_file_with_wall_info=None):
+def writing_wall_info_to_json(vk, owner_id=None, domain=None, posts_number=100, path_to_file_with_wall_info=None):
     if owner_id and not isinstance(owner_id, int):
         owner_id=None
     if not isinstance(posts_number, int) or posts_number < 1:
