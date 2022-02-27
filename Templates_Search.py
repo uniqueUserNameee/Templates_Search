@@ -7,6 +7,9 @@ import sys
 # Библиотека, предназначенная для работы с данными в формате JSON
 import json
 
+# Библиотека, предназначенная для расширенной обработки естественного языка
+import spacy
+
 # Библиотека, предназначенная для работы с VK API
 import vk_api
 
@@ -113,6 +116,17 @@ if __name__ == '__main__':
         sys.exit()
 """
 
+# Функция, которая нормализует новости
+def news_normalization(news, nlp):
+    tokens_list = []
+    for token in nlp(news):
+        word = token.lemma_
+        lexeme = nlp.vocab[word]
+        if not lexeme.is_stop and (word.isalpha() or word.isdigit()):
+            tokens_list.append(word)
+    return ' '.join(tokens_list)
+
+
 # Путь к CSV-файлу, содержащий обучающий массив текстов
 path_to_csv_file = 'lenta-ru-news.csv'
 
@@ -134,3 +148,7 @@ unusable_topics_list = [topic_item[0] for topic_item in topics_frequency_dict.it
 news_dataframe.set_index('topic', inplace=True)
 news_dataframe.drop(index=unusable_topics_list, inplace=True)
 news_dataframe.reset_index(inplace=True)
+
+# Нормализуется столбец news_text объекта news_dataframe
+nlp = spacy.load('ru_core_news_lg', exclude=['morphologizer, parser, senter, attribute_ruler, lemmatizer, ner'])
+news_dataframe['news_text'] = news_dataframe['news_text'].apply(news_normalization, args=(nlp,))
