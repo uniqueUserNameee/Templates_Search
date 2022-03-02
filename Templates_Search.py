@@ -117,38 +117,51 @@ if __name__ == '__main__':
 """
 
 # Функция, которая нормализует новости
-def news_normalization(news, nlp):
+def news_normalization(news, nlp, words_number_in_news):
     tokens_list = []
     for token in nlp(news):
         word = token.lemma_
         lexeme = nlp.vocab[word]
         if not lexeme.is_stop and (word.isalpha() or word.isdigit()):
             tokens_list.append(word)
-    return ' '.join(tokens_list)
+        if len(tokens_list) == words_number_in_news:
+            return ' '.join(tokens_list)
 
 
 # Путь к CSV-файлу, содержащий обучающий массив текстов
 path_to_csv_file = 'lenta-ru-news.csv'
 
+
+# Список тем, новости на которые не нужны пользователю в обучающем массиве текстов
+unusable_topics_list = ['Все']
+
 # Минимальное количество новостей, которое должно быть на каждую тему
 min_amount_of_news_on_topic = 200
+
+# Количество значащих слов, которое должно быть в каждой новости
+words_number_in_news = 100
 
 # В столбец news_text объекта news_dataframe записываются тексты новостей, а в столбец topic - их темы
 news_dataframe = pd.read_csv(path_to_csv_file)[['title', 'text', 'tags']]
 news_dataframe['news_text'] = news_dataframe['title'].str.strip() + ' ' + news_dataframe['text'].str.strip()
 news_dataframe.rename(columns={'tags': 'topic'}, inplace=True)
 news_dataframe.drop(columns=['title', 'text'], axis=1, inplace=True)
+news_dataframe.dropna(inplace=True)
 
 # Составляется список "непригодных" тем, на которые не хватает новостей для обучения нейронной сети
 topics_frequency_dict = dict(news_dataframe['topic'].value_counts())
-unusable_topics_list = [topic_item[0] for topic_item in topics_frequency_dict.items()
-                        if topic_item[1] < min_amount_of_news_on_topic]
+unusable_topics_list += [topic_item[0] for topic_item in topics_frequency_dict.items()
+                         if topic_item[1] < min_amount_of_news_on_topic]
 
 # Удаляются новости на "непригодные" темы
 news_dataframe.set_index('topic', inplace=True)
-news_dataframe.drop(index=unusable_topics_list, inplace=True)
+topics_set = set(news_dataframe.index.values)
+unusable_topics_list = set(unusable_topics_list)
+undetected_topics_list = list(unusable_topics_list - topics_set)
+news_dataframe.drop(index=list(unusable_topics_list & topics_set), inplace=True)
 news_dataframe.reset_index(inplace=True)
 
 # Нормализуется столбец news_text объекта news_dataframe
 nlp = spacy.load('ru_core_news_lg', exclude=['morphologizer, parser, senter, attribute_ruler, lemmatizer, ner'])
-news_dataframe['news_text'] = news_dataframe['news_text'].apply(news_normalization, args=(nlp,))
+news_dataframe['news_text'] = news_dataframe['news_text'].apply(news_normalization, args=(nlp, words_number_in_news))
+news_dataframe.dropna(inplace=True)
