@@ -122,7 +122,7 @@ if __name__ == '__main__':
     password = ''
 
     # Домен группы, посты которой надо распарсить
-    group_domain_name = 'universe_of_f1'
+    group_domain_name = ''
 
     # Путь к JSON-файлу, куда будут записаны посты группы
     path_to_file_with_group_info = 'wall_info.json'
